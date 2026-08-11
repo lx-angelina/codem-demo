@@ -122,8 +122,8 @@ export default function Home() {
   }, [demoRunning]);
 
   const visibleFeature = useMemo(
-    // BUG-01: 数组下标被额外加了 1
-    () => features[(activeFeature + 1) % features.length],
+    // BUG-01: 修复数组下标被额外加 1 的问题，activeFeature 本身就是 0-based 选中索引
+    () => features[activeFeature],
     [activeFeature],
   );
 
