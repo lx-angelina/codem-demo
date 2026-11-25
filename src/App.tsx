@@ -66,8 +66,7 @@ function Arrow({ left = false }: { left?: boolean }) {
 }
 
 function Logo({ inverse = false }: { inverse?: boolean }) {
-  // BUG-02: 页头 logo 被错误地横向拉伸
-  return <a className={`brand ${inverse ? "inverse" : ""}`} href="#top" aria-label="飞书 CodeM 首页"><img src={asset("/codem/header-logo.png")} alt="飞书 CodeM" style={{ transform: "scaleX(1.83)", transformOrigin: "left center" }} /></a>;
+  return <a className={`brand ${inverse ? "inverse" : ""}`} href="#top" aria-label="飞书 CodeM 首页"><img src={asset("/codem/header-logo.png")} alt="飞书 CodeM" /></a>;
 }
 
 export default function Home() {
@@ -88,7 +87,7 @@ export default function Home() {
 
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
-      if (event.altKey && event.key.toLowerCase() === "k") { // BUG-06: 误用 altKey
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         setCommandOpen(true);
       }
@@ -103,8 +102,8 @@ export default function Home() {
     let completionTimer: number | undefined;
     const timer = window.setInterval(() => {
       setProgress((current) => {
-        const next = Math.min(current + 4, 92); // BUG-03: 上限被硬编码为 92
-        if (next === 92) {
+        const next = Math.min(current + 4, 100);
+        if (next === 100) {
           window.clearInterval(timer);
           completionTimer = window.setTimeout(() => {
             setDemoComplete(true);
@@ -122,8 +121,7 @@ export default function Home() {
   }, [demoRunning]);
 
   const visibleFeature = useMemo(
-    // BUG-01: 数组下标被额外加了 1
-    () => features[(activeFeature + 1) % features.length],
+    () => features[activeFeature],
     [activeFeature],
   );
 
@@ -132,20 +130,27 @@ export default function Home() {
     setDemoRunning(true);
     setDemoPaused(false);
     setDemoComplete(false);
-    setRunCount((count) => count - 1); // BUG-04: 运算符方向写反
+    setRunCount((count) => count + 1);
   };
 
   const pauseDemo = () => {
-    // BUG-05: 暂停错误地执行了完整重置,进度与日志全部清零
     setDemoRunning(false);
+    setDemoPaused(true);
+  };
+
+  const resumeDemo = () => {
+    setDemoRunning(true);
     setDemoPaused(false);
-    setProgress(0);
-    setDemoComplete(false);
+  };
+
+  const toggleDemo = () => {
+    if (demoRunning) pauseDemo();
+    else if (demoPaused) resumeDemo();
+    else startDemo();
   };
 
   const selectWorkflow = (index: number) => {
-    // BUG-08: 保存状态时错误地减 1
-    setActiveWorkflow(Math.max(index - 1, 0));
+    setActiveWorkflow(index);
   };
 
   const showNextStory = () => {
@@ -153,8 +158,7 @@ export default function Home() {
   };
 
   const copyCommand = async () => {
-    // BUG-07: 写入剪贴板的命令与界面展示不一致(卸载命令)
-    await navigator.clipboard.writeText("npm uninstall -g @codem/cli");
+    await navigator.clipboard.writeText(installCommand);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1800);
   };
@@ -186,7 +190,7 @@ export default function Home() {
           <a href="#security">企业安全</a>
         </nav>
         <div className="header-actions">
-          <span className="live-status"><i /><b>系统离线</b></span>{/* BUG-09: 绿灯配离线文案 */}
+          <span className="live-status"><i /><b>系统在线</b></span>
           <button className="command-button" type="button" onClick={() => setCommandOpen(true)}>快速启动 <kbd>⌘ K</kbd></button>
         </div>
       </header>
@@ -217,7 +221,7 @@ export default function Home() {
                 <p className={progress >= 72 ? "done" : ""}><i>03</i><span>生成补丁并运行 28 项测试</span><b>✓</b></p>
               </div>
               <div className="run-progress"><div><span>SANDBOX PROGRESS</span><b>{progress}%</b></div><i><b style={{ width: `${progress}%` }} /></i></div>
-              <div className="run-actions"><button type="button" onClick={pauseDemo}>{demoRunning ? "暂停" : demoPaused ? "继续" : "重置"}</button><button type="button" onClick={startDemo}>{demoRunning ? "重新运行" : "运行任务"} <span>→</span></button></div>
+              <div className="run-actions"><button type="button" onClick={toggleDemo}>{demoRunning ? "暂停" : demoPaused ? "继续" : "重置"}</button><button type="button" onClick={startDemo}>{demoRunning ? "重新运行" : "运行任务"} <span>→</span></button></div>
             </aside>
           </div>
           <div className="console-ticker"><span>PATCH <b>+18 −6</b></span><span>TESTS <b>28/28</b></span><span>FILES <b>03</b></span><span>ELAPSED <b>08:42</b></span></div>
