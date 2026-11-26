@@ -1,4 +1,5 @@
 import { type CSSProperties, type FormEvent, useEffect, useMemo, useState } from "react";
+import FulfillmentApp from "./fulfillment/FulfillmentApp";
 
 const BASE = import.meta.env.BASE_URL;
 const asset = (path: string) => `${BASE}${path.replace(/^\//, "")}`;
@@ -69,7 +70,31 @@ function Logo({ inverse = false }: { inverse?: boolean }) {
   return <a className={`brand ${inverse ? "inverse" : ""}`} href="#top" aria-label="飞书 CodeM 首页"><img src={asset("/codem/header-logo.png")} alt="飞书 CodeM" /></a>;
 }
 
-export default function Home() {
+function useHashView(): "home" | "fulfillment" {
+  const [view, setView] = useState<"home" | "fulfillment">(() =>
+    window.location.hash === "#fulfillment" ? "fulfillment" : "home",
+  );
+
+  useEffect(() => {
+    const sync = () => setView(window.location.hash === "#fulfillment" ? "fulfillment" : "home");
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
+  }, []);
+
+  return view;
+}
+
+export default function App() {
+  const view = useHashView();
+
+  useEffect(() => {
+    if (view === "fulfillment") window.scrollTo({ top: 0 });
+  }, [view]);
+
+  return view === "fulfillment" ? <FulfillmentApp /> : <Home />;
+}
+
+function Home() {
   const [commandOpen, setCommandOpen] = useState(false);
   const [demoRunning, setDemoRunning] = useState(false);
   const [demoPaused, setDemoPaused] = useState(false);
@@ -188,6 +213,7 @@ export default function Home() {
           <a href="#capabilities">演示棋盘</a>
           <a href="#workflow">运行轨迹</a>
           <a href="#security">企业安全</a>
+        <a href="#fulfillment">前置仓演示</a>
         </nav>
         <div className="header-actions">
           <span className="live-status"><i /><b>系统在线</b></span>
